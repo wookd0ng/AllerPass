@@ -1,4 +1,4 @@
-package com.workcapus.allerpass;
+package com.medipass.allerpass;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
