@@ -1,12 +1,11 @@
 package com.medipass.allerpass.entity;
 
+import com.medipass.allerpass.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.management.relation.Role;
 
 @Entity
 @Getter
@@ -35,7 +34,7 @@ public class HospitalAdmin {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role; // super_admin과 hospital_admin 사용 예정
+    private Role role;// super_admin과 hospital_admin 사용 예정
 
     @Column
     private String lastLogin;

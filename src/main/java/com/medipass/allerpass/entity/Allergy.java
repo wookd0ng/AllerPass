@@ -1,12 +1,11 @@
 package com.medipass.allerpass.entity;
 
+import com.medipass.allerpass.enums.Severity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.print.attribute.standard.Severity;
 
 @Entity
 @Getter
