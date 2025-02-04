@@ -1,11 +1,12 @@
 package com.medipass.allerpass.entity;
 
-import com.medipass.allerpass.enums.Role;
+import com.medipass.allerpass.constant.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Entity
 @Getter
@@ -24,7 +25,7 @@ public class HospitalAdmin {
     private Hospital hospital;
 
     @Column(nullable = false)
-    private String name;
+    private String adminName;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -38,4 +39,16 @@ public class HospitalAdmin {
 
     @Column
     private String lastLogin;
+
+
+
+    public HospitalAdmin(Hospital hospital, String adminName, String email, String password, Role role) {
+        this.hospital = hospital;
+        this.adminName = adminName;
+        this.email = email;
+//        this.password = new BCryptPasswordEncoder().encode(password);
+        this.password = password; // ✅ 이미 암호화된 값이 들어오므로 그대로 저장
+
+        this.role = role;
+    }
 }

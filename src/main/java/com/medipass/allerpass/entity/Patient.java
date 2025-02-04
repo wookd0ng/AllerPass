@@ -1,6 +1,6 @@
 package com.medipass.allerpass.entity;
 
-import com.medipass.allerpass.enums.Gender;
+import com.medipass.allerpass.constant.Gender;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
