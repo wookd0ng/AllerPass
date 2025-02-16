@@ -1,5 +1,6 @@
 package com.medipass.allerpass.controller;
 
+import com.medipass.allerpass.constant.Role;
 import com.medipass.allerpass.dto.LoginFormDto;
 import com.medipass.allerpass.service.HospitalAdminService;
 import com.medipass.allerpass.service.PublicApiService;
@@ -9,11 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Hospital Api", description = "병원 인증 관련 API")
+@Tag(name = "Hospital Admin API", description = "병원 관리자 인증 및 회원가입 API")
 @RestController
 @RequestMapping("/api/hospital-admin")
 @RequiredArgsConstructor
@@ -21,89 +21,100 @@ import org.springframework.web.bind.annotation.*;
 public class HospitalAdminController {
 
     private final HospitalAdminService hospitalAdminService;
-    private final PublicApiService publicApiService; // 공공 API 호출 서비스
+    private final PublicApiService publicApiService; // 공공 API 서비스
     private final EmailService emailService; // 이메일 인증 서비스
-    private final PasswordEncoder passwordEncoder;
-
-
 
     /**
-     * 병원 관리자 회원가입 API
+     * ✅ 병원 코드 인증 API
+     * 사용자가 입력한 병원 코드와 전화번호를 공공 API를 통해 검증 후 인증 상태를 업데이트함.
      */
-    @PostMapping("/signup")
-    public ResponseEntity<?> registerHospitalAdmin(@Valid @RequestBody LoginFormDto loginFormDto) {
-        try {
-            // 1. 병원 코드, 전화 번호 검증
-            boolean isValidHospital = publicApiService.verifyHospital(loginFormDto.getHospitalCode(), loginFormDto.getHospitalTel());
-            if (!isValidHospital) {
-                return ResponseEntity.badRequest().body("유효하지 않은 병원 코드입니다.");
-            }
-
-            // 2. 이메일 인증 검증
-            boolean isEmailVerified = emailService.isEmailVerified(loginFormDto.getEmail());
-            if (!isEmailVerified) {
-                return ResponseEntity.badRequest().body("이메일 인증이 완료되지 않았습니다.");
-            }
-
-            // 3. 비밀번호 확인 검증
-            if (!loginFormDto.getPassword().equals(loginFormDto.getConfirmPassword())) {
-                return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다.");
-            }
-
-            // 4. 비밀번호 암호화
-            String encodedPassword = passwordEncoder.encode(loginFormDto.getPassword());
-
-            // 5. 병원 관리자 저장
-            hospitalAdminService.saveMember(
-                    loginFormDto.getHospitalCode(),
-                    loginFormDto.getAdminName(),
-                    loginFormDto.getEmail(),
-                    encodedPassword
-            );
-
-
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * 병원 코드 인증 API (공공 API 연동)
-     */
-    @Operation(summary = "병원 코드 인증", description = "공공 API를 이용해 병원 코드와 전화번호를 검증합니다.")
-
+    @Operation(summary = "병원 코드 인증", description = "공공 API를 이용해 병원 코드와 전화번호를 검증 후 인증 상태를 저장합니다.")
     @GetMapping("/verify-hospital")
-    public ResponseEntity<?> verifyHospital(@RequestParam String hospitalCode, @RequestParam String hospitalTel) {
+    public ResponseEntity<?> verifyHospital(
+            @RequestParam String email,
+            @RequestParam String hospitalCode,
+            @RequestParam String hospitalTel) {
+
+        // ✅ 공공 API를 통해 병원 코드 검증
         boolean isValid = publicApiService.verifyHospital(hospitalCode, hospitalTel);
         if (!isValid) {
             return ResponseEntity.badRequest().body("유효하지 않은 병원 코드 또는 전화번호입니다.");
         }
+
+        // ✅ 병원 인증 완료 상태 저장
+        hospitalAdminService.activeHospitalVerification(hospitalCode, email);
+
         return ResponseEntity.ok("병원 코드 및 전화번호 인증 성공");
     }
 
     /**
-     * 이메일 인증 코드 발송 API
+     * ✅ 이메일 인증 코드 발송 API
+     * 병원 코드가 인증된 후 이메일 인증 코드가 전송됨.
      */
+    @Operation(summary = "이메일 인증 코드 발송", description = "이메일 인증을 위해 인증 코드를 전송합니다.")
     @PostMapping("/send-email-verification")
-    public ResponseEntity<?> sendEmailVerification(@RequestParam String email) {
+    public ResponseEntity<?> sendEmailVerification(@RequestParam String email, @RequestParam String hospitalCode) {
+        // ✅ 병원 코드가 인증되었는지 확인
+        boolean isHospitalVerified = hospitalAdminService.isHospitalVerified(hospitalCode, email);
+        if (!isHospitalVerified) {
+            return ResponseEntity.badRequest().body("병원 코드 인증을 먼저 완료해야 합니다.");
+        }
+
+        // ✅ 이메일 인증 코드 발송
         String verificationCode = emailService.sendVerificationCode(email);
-        return ResponseEntity.ok("인증 코드가 이메일로 전송되었습니다.");
+
+        return ResponseEntity.ok("이메일 인증 코드가 전송되었습니다.");
     }
 
     /**
-     * 이메일 인증 코드 검증 API
+     * ✅ 이메일 인증 코드 검증 API
+     * 사용자가 입력한 이메일 인증 코드를 검증 후 인증 상태를 업데이트함.
      */
+    @Operation(summary = "이메일 인증 코드 검증", description = "사용자가 입력한 이메일 인증 코드가 올바른지 검증 후 인증 상태를 저장합니다.")
     @PostMapping("/verify-email-code")
     public ResponseEntity<?> verifyEmailCode(@RequestParam String email, @RequestParam String code) {
         boolean isValid = emailService.verifyCode(email, code);
         if (!isValid) {
             return ResponseEntity.badRequest().body("인증 코드가 일치하지 않습니다.");
         }
+
         return ResponseEntity.ok("이메일 인증 성공");
     }
 
+    /**
+     * ✅ 회원가입 API
+     * 이메일 인증 및 병원 코드 인증이 완료된 사용자만 회원가입을 진행할 수 있음.
+     */
+    @Operation(summary = "병원 관리자 회원가입", description = "이메일 및 병원 코드 인증이 완료된 사용자의 회원가입을 처리합니다.")
+    @PostMapping("/signup")
+    public ResponseEntity<?> registerHospitalAdmin(@Valid @RequestBody LoginFormDto loginFormDto) {
+        try {
+            // 1. 병원 코드 인증 여부 확인
+            boolean isHospitalVerified = hospitalAdminService.isHospitalVerified(
+                    loginFormDto.getHospitalCode(), loginFormDto.getEmail()
+            );
+            if (!isHospitalVerified) {
+                return ResponseEntity.badRequest().body("병원 코드 인증을 먼저 완료해야 합니다.");
+            }
 
+            // 2. 이메일 인증 여부 확인
+            boolean isEmailVerified = emailService.isEmailVerified(loginFormDto.getEmail());
+            if (!isEmailVerified) {
+                return ResponseEntity.badRequest().body("이메일 인증을 먼저 완료해야 합니다.");
+            }
+
+            // 3. 회원가입 진행
+            hospitalAdminService.registerAdmin(
+                    loginFormDto.getHospitalCode(),
+                    loginFormDto.getAdminName(),
+                    loginFormDto.getEmail(),
+                    loginFormDto.getPassword(),
+                    Role.HOSPITAL_ADMIN
+            );
+
+            return ResponseEntity.ok("회원가입이 완료되었습니다.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
-
