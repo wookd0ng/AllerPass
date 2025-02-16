@@ -40,15 +40,28 @@ public class HospitalAdmin {
     @Column
     private String lastLogin;
 
+    // set은 병원 인증 상태 업데이트 메서드
+    @Setter
+    @Column(nullable = false)
+    private boolean hospitalVerified = false; // ✅ 병원 인증 여부 필드 추가
+
+    @Column(nullable = false)
+    private boolean emailVerfied = false; // ✅ 이메일 인증 여부 필드 추가
 
 
-    public HospitalAdmin(Hospital hospital, String adminName, String email, String password, Role role) {
-        this.hospital = hospital;
-        this.adminName = adminName;
-        this.email = email;
-//        this.password = new BCryptPasswordEncoder().encode(password);
-        this.password = password; // ✅ 이미 암호화된 값이 들어오므로 그대로 저장
 
-        this.role = role;
+    //  hospitalAdmin 생성 정적 메서드
+    public static HospitalAdmin createAdmin(Hospital hospital, String adminName, String email, String password, Role role){
+        HospitalAdmin hospitalAdmin = new HospitalAdmin();
+        hospitalAdmin.hospital=hospital; // 여기서 병원과 연결됨
+        hospitalAdmin.adminName=adminName;
+        hospitalAdmin.email=email;
+        hospitalAdmin.password=password; //암호화는 서비스 레이어에서 처리
+        hospitalAdmin.role=role;
+        hospitalAdmin.hospitalVerified=false;
+        hospitalAdmin.emailVerfied=false;
+        return hospitalAdmin;
+
     }
+
 }
