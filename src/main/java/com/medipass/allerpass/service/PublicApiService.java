@@ -57,4 +57,8 @@ public class PublicApiService {
         return false;
 
     }
+
+    public boolean testHospitalCode(String hospitalCode){
+
+    }
 }
