@@ -24,6 +24,20 @@ public class HospitalAdminController {
     private final PublicApiService publicApiService; // 공공 API 서비스
     private final EmailService emailService; // 이메일 인증 서비스
 
+//    완전 간단한 병원인증 테스트 API
+    @Operation(summary = "병원 코드만 테스트", description = "병원코드만 입력하여 API와의 인증 확인")
+    @GetMapping("/just-test")
+    public ResponseEntity<?> testHospitalCode(@RequestParam String sgguCd){
+        // ✅ Swagger에서 sgguCd 값 확인
+        System.out.println("Swagger 요청: sgguCd = " + sgguCd);
+        boolean isValid = publicApiService.testHospitalCode(sgguCd);
+        if (isValid){
+            return ResponseEntity.ok().body("해당 병원이 인증되었습니다.");
+        } else {
+            return ResponseEntity.badRequest().body("해당 병원이 확인되지 않습니다.");
+        }
+    }
+
     /**
      * ✅ 병원 코드 인증 API
      * 사용자가 입력한 병원 코드와 전화번호를 공공 API를 통해 검증 후 인증 상태를 업데이트함.
