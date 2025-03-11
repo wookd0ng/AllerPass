@@ -8,6 +8,7 @@ import com.medipass.allerpass.repository.HospitalRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,13 +24,15 @@ public class PublicApiService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final HospitalRepository hospitalRepository;
     private final HospitalAdminRepository hospitalAdminRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${api.key}")
     private String apiKey;
 
-    public PublicApiService(HospitalRepository hospitalRepository, HospitalAdminRepository hospitalAdminRepository) {
+    public PublicApiService(HospitalRepository hospitalRepository, HospitalAdminRepository hospitalAdminRepository, PasswordEncoder passwordEncoder) {
         this.hospitalRepository = hospitalRepository;
         this.hospitalAdminRepository = hospitalAdminRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -161,7 +164,7 @@ public class PublicApiService {
             if(existingHospital.isPresent()){
                 return ResponseEntity.status(200).body("이미 등록된 병원입니다.");
             }
-            System.out.println("중복 로직 제대로 안됨");
+//            System.out.println("중복 로직 제대로 안됨");
 
             // ✅ 병원 DB에 저장
             Hospital newHospital = new Hospital();
@@ -172,9 +175,12 @@ public class PublicApiService {
 
             // 무작위 비밀번호 생성
             String randomPassword = generateRandomPassword(6);
+
+            // 비밀번호 암호화
+            String encodedPassword = passwordEncoder.encode(randomPassword);
             //병원 관리자 생성
             HospitalAdmin hospitalAdmin = HospitalAdmin.createAdmin(newHospital);
-            hospitalAdmin.setTemporaryPassword(randomPassword);
+            hospitalAdmin.setTemporaryPassword(encodedPassword);
             hospitalAdmin.setHospitalVerified(true);
             hospitalAdminRepository.save(hospitalAdmin);
 
