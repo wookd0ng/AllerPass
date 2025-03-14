@@ -24,16 +24,11 @@ public class Hospital {
     @Column(unique = true, nullable = false)
     private String hospitalName;
 
-//    @Column(unique = true)
-//    private String hospitalCode;
-
-
     @Column(unique = true)
     private String address;
 
     @Column(unique = true, nullable = false)
     private String telno;
-
 
     //  HospitalAdmin 테이블과의 1:N 관계
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.ALL)
