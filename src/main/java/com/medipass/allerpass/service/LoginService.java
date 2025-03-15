@@ -33,4 +33,6 @@ public class LoginService {
         return passwordEncoder.matches(randomPassword, hospitalAdmin.getTemporaryPassword());
 
     }
+
+
 }
