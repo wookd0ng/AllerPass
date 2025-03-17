@@ -1,5 +1,6 @@
 package com.medipass.allerpass.controller;
 
+import com.medipass.allerpass.dto.LoginResponseDto;
 import com.medipass.allerpass.service.LoginService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,13 +28,10 @@ public class LoginController {
             @ApiResponse(responseCode = "401", description = "로그인 실패")
     })
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String yadMnM, @RequestParam String randomPassword) {
-        boolean isVaild = loginService.login(yadMnM,randomPassword);
-        if (isVaild){
-            return ResponseEntity.ok(Map.of("message","로그인 성공!"));
-        } else {
-            return ResponseEntity.status(401).body(Map.of("Message","로그인 실패!"));
-        }
+    public ResponseEntity<LoginResponseDto> login(@RequestParam String yadMnM, @RequestParam String randomPassword) {
+        LoginResponseDto response = loginService.login(yadMnM,randomPassword);
+        return ResponseEntity.ok(response);
+
     }
 }
 
